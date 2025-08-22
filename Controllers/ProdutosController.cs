@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace APICatalogo.Controllers;
-[Route("[controller]")]
+[Route("api/[controller]")]
 [ApiController]
 public class ProdutosController : ControllerBase
 {
@@ -17,20 +17,17 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<Produto>> Get()
+    public async Task<ActionResult<IEnumerable<Produto>>> Get2()
     {
-        var produtos = _context.Produtos.ToList();
-        if (produtos is null)
-        {
-            return NotFound("Produtos não encontrados...");
-        }
-        return produtos;
+        return await _context.Produtos.AsNoTracking().ToListAsync();
     }
 
-    [HttpGet("{id:int}", Name = "ObterProduto")]
-    public ActionResult<Produto> Get(int id)
+    // produtos/id
+    [HttpGet("{id}, Name = ObterProduto")]
+    public async Task<ActionResult<Produto>> Get([FromQuery]int id)
     {
-        var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+        
+        var produto = await _context.Produtos.AsNoTracking().FirstOrDefaultAsync(p => p.ProdutoId == id);
 
         if (produto is null)
         {
@@ -39,11 +36,12 @@ public class ProdutosController : ControllerBase
         return produto;
     }
 
+    // produtos
     [HttpPost]
-    public ActionResult Post(Produto produto)
+    public ActionResult Post([FromBody]Produto produto)
     {
-        if (produto is null)
-            return BadRequest();
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         _context.Produtos.Add(produto);
         _context.SaveChanges();
@@ -51,6 +49,7 @@ public class ProdutosController : ControllerBase
         return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produto);
     }
 
+    // produtos/id
     [HttpPut("{id:int}")]
     public ActionResult Put(int id, Produto produto)
     {
@@ -65,6 +64,7 @@ public class ProdutosController : ControllerBase
         return Ok(produto);
     }
 
+    
     [HttpDelete("{id:int}")]
     public ActionResult Delete(int id)
     {
